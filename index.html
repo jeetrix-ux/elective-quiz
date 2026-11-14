@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Elective Compass · NITW ECE 6th-sem PE-II & PE-III</title>
+<meta name="description" content="A thorough quiz to choose Professional Elective II and III (NIT Warangal ECE, 6th semester) from interest, strengths, grade outlook and hardware-job value.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap top-inner">
+    <div class="brand"><span class="logo" aria-hidden="true">◎</span> Elective Compass <span class="sub">NITW ECE · 6th sem</span></div>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="quiz" role="tab">Quiz</button>
+      <button class="tab" data-tab="courses" role="tab">Courses</button>
+      <button class="tab" data-tab="about" role="tab">Method</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="tab-quiz" class="tabpane">
+    <div id="progress" class="progress hidden">
+      <div class="progress-meta"><span id="partLabel"></span><span id="countLabel"></span></div>
+      <div class="bar"><div id="barFill"></div></div>
+    </div>
+    <div id="stage"></div>
+  </section>
+
+  <section id="tab-courses" class="tabpane hidden">
+    <h1 class="h1">The eight options</h1>
+    <p class="lede">Syllabi as listed in the 2024-25 B.Tech ECE curriculum. Difficulty, grading and job notes are estimates; see <a href="#" data-goto="about">How it scores</a>.</p>
+    <div id="courseList"></div>
+  </section>
+
+  <section id="tab-about" class="tabpane hidden">
+    <div id="aboutPane"></div>
+  </section>
+</main>
+
+<div id="tip" class="tip" role="tooltip"></div>
+<footer class="foot wrap">Built from the NIT Warangal B.Tech ECE curriculum (2024-25). Not an official NITW tool. Your answers stay in your browser.</footer>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
