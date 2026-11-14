@@ -34,14 +34,15 @@
   function buildScreens() {
     const sc = [{ kind: "intro" }];
     PART_A.forEach(q => sc.push({ kind: "A", part: 1, q }));
-    PART_B.forEach(q => sc.push({ kind: "B", part: 2, q }));
-    S.topicOrder.forEach(i => sc.push({ kind: "T", part: 3, i }));
-    S.probeOrder.forEach(i => sc.push({ kind: "P", part: 4, i }));
+    SLOT_II.concat(SLOT_III).forEach(c => sc.push({ kind: "F", part: 2, c }));
+    PART_B.forEach(q => sc.push({ kind: "B", part: 3, q }));
+    S.topicOrder.forEach(i => sc.push({ kind: "T", part: 4, i }));
+    S.probeOrder.forEach(i => sc.push({ kind: "P", part: 5, i }));
     sc.push({ kind: "results" });
     return sc;
   }
   let SCREENS = buildScreens();
-  const PART_NAMES = { 1: "Part 1 of 4 · About you", 2: "Part 2 of 4 · Scenarios", 3: "Part 3 of 4 · Blind syllabus taste test", 4: "Part 4 of 4 · Readiness check" };
+  const PART_NAMES = { 1: "Part 1 of 5 · About you", 2: "Part 2 of 5 · Professors & seniors", 3: "Part 3 of 5 · Scenarios", 4: "Part 4 of 5 · Blind syllabus taste test", 5: "Part 5 of 5 · Readiness check" };
   const partCount = p => SCREENS.filter(s => s.part === p).length;
   const partIndex = (i) => { const p = SCREENS[i].part; let n = 0; for (let k = 0; k <= i; k++) if (SCREENS[k].part === p) n++; return n; };
 
@@ -83,6 +84,7 @@
     if (sc.kind === "intro") return renderIntro();
     if (sc.kind === "A") return renderA(sc.q);
     if (sc.kind === "B") return renderB(sc.q);
+    if (sc.kind === "F") return renderProf(sc.c);
     if (sc.kind === "T") return renderTopic(sc.i);
     if (sc.kind === "P") return renderProbe(sc.i);
     if (sc.kind === "results") return renderResults();
@@ -96,9 +98,10 @@
       <p class="lede">Around ${SCREENS.length - 2} quick taps, about 12–15 minutes. You get a decisive pick for each slot, the exact preference order to fill in the form, and the reasoning: interest, fit, grade outlook and hardware-job value.</p>
       <div class="parts">
         <div class="part"><b>1 · About you</b><span>Prerequisites, career targets, GATE, honors, maths/coding comfort, exam style, workload.</span></div>
-        <div class="part"><b>2 · Scenarios</b><span>14 situational picks that reveal what you actually enjoy.</span></div>
-        <div class="part"><b>3 · Blind syllabus taste test</b><span>${TOPICS.length} real topics from the 8 syllabi, shuffled with course names hidden. Rate each one.</span></div>
-        <div class="part"><b>4 · Readiness check</b><span>${PROBES.length} short concept questions, 2 per course, to gauge how prepared you are.</span></div>
+        <div class="part"><b>2 · Professors &amp; seniors</b><span>Likely instructor and senior feedback for each course. Tell it what works for you.</span></div>
+        <div class="part"><b>3 · Scenarios</b><span>14 situational picks that reveal what you actually enjoy.</span></div>
+        <div class="part"><b>4 · Blind syllabus taste test</b><span>${TOPICS.length} real topics from the 8 syllabi, shuffled with course names hidden. Rate each one.</span></div>
+        <div class="part"><b>5 · Readiness check</b><span>${PROBES.length} short concept questions, 2 per course, to gauge how prepared you are.</span></div>
       </div>
       <div class="muted">PE-II options</div>
       <div class="chips">${SLOT_II.map(c => `<span class="chip">${esc(COURSES[c].short)}</span>`).join("")}</div>
@@ -152,6 +155,30 @@
       <h2 class="q">${esc(q.q)}</h2>
       <div class="opts ${q.options.length > 5 ? "two" : ""}">${q.options.map((o, i) =>
         `<button class="opt ${v === i ? "sel" : ""}" data-b="${i}"><span class="k">${i + 1}</span><span>${esc(o.t)}</span></button>`).join("")}</div>
+      ${navRow(v !== undefined)}
+    </div>`;
+  }
+
+  /* ---------- professors & seniors ---------- */
+  const PROF_OPTS = [
+    { v: 3, t: "Sounds good for me" }, { v: 2, t: "Fine" },
+    { v: 1, t: "Not for me" }, { v: "skip", t: "No opinion" }
+  ];
+  function renderProf(c) {
+    const C = COURSES[c], P = SENIOR[c], key = "f_" + c, v = S.ans[key];
+    const known = !/^Not known/.test(P.prof);
+    stage.innerHTML = `<div class="card qcard">
+      <div class="qnum">PE-${C.slot} · ${esc(C.short)}</div>
+      <h2 class="q">${esc(C.name)}</h2>
+      <div class="profbox">
+        <div class="pr"><span class="pl">Likely instructor</span><span class="pv">${esc(P.prof)}</span></div>
+        <div class="pr"><span class="pl">Seniors say</span><span class="pv">${esc(P.note)}</span></div>
+      </div>
+      <p class="hint">${known ? "Does this teaching style and class work for you?" : "No confirmed instructor yet. Rate the class as seniors describe it."}</p>
+      <div class="opts two">${PROF_OPTS.map((o, k) => {
+        const sel = o.v === "skip" ? v === null : v === o.v;
+        return `<button class="opt ${o.v === "skip" ? "ghost" : ""} ${sel ? "sel" : ""}" data-f="${key}" data-val="${o.v}"><span class="k">${k + 1}</span><span>${esc(o.t)}</span></button>`; }).join("")}</div>
+      <p class="muted" style="margin-top:12px">Unconfirmed senior notes, Nov 2026. Instructor allotment can change.</p>
       ${navRow(v !== undefined)}
     </div>`;
   }
@@ -218,6 +245,7 @@
       S.ans[sc.q.id] = g; save(); render(); return;
     }
     if (b.dataset.b !== undefined) { S.ans[sc.q.id] = +b.dataset.b; save(); render(); autoNext(); return; }
+    if (b.dataset.f !== undefined) { S.ans[b.dataset.f] = b.dataset.val === "skip" ? null : +b.dataset.val; save(); render(); autoNext(); return; }
     if (b.dataset.t !== undefined) { S.ans[b.dataset.t] = b.dataset.val === "skip" ? null : +b.dataset.val; save(); render(); autoNext(); return; }
     if (b.dataset.p !== undefined) { S.ans[b.dataset.p] = +b.dataset.val; save(); render(); autoNext(); return; }
   });
@@ -229,7 +257,7 @@
     if (e.key === "ArrowLeft" && S.idx > 0) return back();
     const n = parseInt(e.key, 10); if (!(n >= 1 && n <= 9)) return;
     const btns = [...stage.querySelectorAll(".opt")];
-    if (sc.kind === "T") { const b = btns[n - 1]; if (b) b.click(); return; }
+    if (sc.kind === "T" || sc.kind === "F") { const b = btns[n - 1]; if (b) b.click(); return; }
     if (["A", "B", "P"].includes(sc.kind) && sc.q?.type !== "grid" && sc.q?.type !== "multi") { const b = btns[n - 1]; if (b) b.click(); }
   });
 
@@ -315,17 +343,33 @@
     // --- grade outlook
     IDS.forEach(c => {
       const C = COURSES[c], x = R[c];
-      x.grade = clamp(100 - C.difficulty * 13 + (x.ready - 50) * .45 + (x.stylefit - 50) * .25 - (C.competition - 3) * 6, 5, 97);
+      const P = SENIOR[c];
+      const longHit = P.longAnswers && a.styleAvoid === "desc";
+      x.longHit = longHit;
+      x.grade = clamp(100 - C.difficulty * 13 + (x.ready - 50) * .45 + (x.stylefit - 50) * .25 - (C.competition - 3) * 6 + P.gradeAdj - (longHit ? 8 : 0), 5, 97);
+    });
+
+    // --- professor & senior intel
+    const VIBE = {
+      chill: { chill: 90, core: 30, moderate: 60, unknown: 50 },
+      core:  { chill: 50, core: 90, moderate: 65, unknown: 50 },
+      any:   { chill: 50, core: 50, moderate: 50, unknown: 50 }
+    }[a.vibe || "any"];
+    IDS.forEach(c => {
+      const x = R[c], P = SENIOR[c], v = a["f_" + c];
+      x.profRating = v === 3 ? 100 : v === 2 ? 65 : v === 1 ? 15 : 50;
+      x.vibeMatch = VIBE[P.vibe];
+      x.prof = clamp(.7 * x.profRating + .3 * x.vibeMatch - (x.longHit ? 25 : 0));
     });
 
     // --- final match
-    const p = a.prio || 3, j = a.jobw || 3;
-    const W = { I: 1.0, F: .55, G: .2 + .2 * (p - 1), J: .1 + .25 * (j - 1) };
-    const Wsum = W.I + W.F + W.G + W.J;
+    const p = a.prio || 3, j = a.jobw || 3, pw = a.profw || 4;
+    const W = { I: 1.0, F: .55, G: .2 + .2 * (p - 1), J: .1 + .25 * (j - 1), P: .15 + .25 * (pw - 1) };
+    const Wsum = W.I + W.F + W.G + W.J + W.P;
     IDS.forEach(c => {
       const x = R[c];
-      x.contrib = { I: W.I * x.interest / Wsum, F: W.F * x.fit / Wsum, G: W.G * x.grade / Wsum, J: W.J * x.job / Wsum };
-      x.match = x.contrib.I + x.contrib.F + x.contrib.G + x.contrib.J;
+      x.contrib = { I: W.I * x.interest / Wsum, F: W.F * x.fit / Wsum, G: W.G * x.grade / Wsum, J: W.J * x.job / Wsum, P: W.P * x.prof / Wsum };
+      x.match = x.contrib.I + x.contrib.F + x.contrib.G + x.contrib.J + x.contrib.P;
       if (!x.prereqOK) x.match *= .6;
     });
 
@@ -362,7 +406,7 @@
      RESULTS
      ============================================================ */
   const seqBg = v => `background: rgba(var(--accent-rgb), ${(0.06 + 0.5 * clamp(v) / 100).toFixed(3)})`;
-  const CMP = { I: "your interest", F: "fit with your strengths & style", G: "grade outlook", J: "hardware-job value" };
+  const CMP = { I: "your interest", F: "fit with your strengths & style", G: "grade outlook", J: "hardware-job value", P: "the professor & senior feedback" };
 
   function swing(R, w, r) {
     const d = Object.keys(CMP).map(k => [k, R[w].contrib[k] - R[r].contrib[k]]).sort((u, v) => v[1] - u[1]);
@@ -380,6 +424,9 @@
     if (W.probeN) bits.push(`Readiness check: ${W.probeGot}/${W.probeN} correct.`);
     if (res.roles.length && W.career !== null) bits.push(`Fit with the careers you picked: ${r0(W.career)}/100.`);
     if (w === "cs" && res.a.gate !== "no") bits.push(`Control Systems is a full GATE EC subject, and ECE has no core control course.`);
+    { const v = res.a["f_" + w]; const lbl = v === 3 ? "sounds good" : v === 2 ? "fine" : v === 1 ? "not for me" : null;
+      const who = /^Not known/.test(SENIOR[w].prof) ? "The class as seniors describe it" : `Instructor (${esc(SENIOR[w].prof)})`;
+      if (lbl) bits.push(`${who}: you rated it “${lbl}”.`); }
     if (w === "ai" && res.a.honors === "h1") bits.push(`It's a hard prerequisite for the Honors-1 ML course.`);
     return `<li><b>PE-${slot} → ${esc(C.short)}.</b> ${bits.join(" ")}</li>`;
   }
@@ -397,6 +444,8 @@
     if (a.pe1 && a.pe1 !== "cmos") warns.push(`You didn't take <b>CMOS VLSI Design (EC1321)</b>, which is the listed prerequisite for Low Power VLSI and Verification &amp; Testing. Both are heavily discounted here; check with the department before choosing either.`);
     [best.x, best.y].forEach(c => { if (R[c].probeN && R[c].probeGot === 0) warns.push(`You got 0/2 on the ${esc(COURSES[c].short)} readiness questions. Plan to revise its foundations in the first weeks.`); });
     if (best.y === "cell") warns.push(`Cellular &amp; Mobile also lists EC1304 Digital Communications, which you'll be taking in the same semester, so expect some early catch-up.`);
+    [best.x, best.y].forEach(c => { if (a["f_" + c] === 1) warns.push(`You said the instructor/class for <b>${esc(COURSES[c].short)}</b> isn't for you, but it still came out on top on the other factors. Raise the professor slider if that should be a deal-breaker.`); });
+    if (best.y === "cell" && R.cell.longHit) warns.push(`Seniors' warning: Cellular exams expect long written answers, and you said that's your least favourite exam style.`);
     if (best.pen > 2) warns.push(`This pair is demanding for the workload you chose. The next-best lighter pair is listed below.`);
     const anyAnswered = Object.keys(a).length > 0;
     if (!anyAnswered) warns.push("You haven't answered anything yet, so these are default results.");
@@ -409,14 +458,14 @@
       const mx = 100;
       return `<div><p class="chart-title">${title}</p><div class="chart">${sorted.map(c => {
         const x = R[c];
-        const tip = `<b>${esc(COURSES[c].short)}</b> · match ${r0(x.match)}<br>Interest ${r0(x.interest)} · Fit ${r0(x.fit)}<br>Grade outlook ${r0(x.grade)} · HW-job ${r0(x.job)}<br>Readiness ${r0(x.ready)}${x.prereqOK ? "" : "<br>⚠ prerequisite missing"}`;
+        const tip = `<b>${esc(COURSES[c].short)}</b> · match ${r0(x.match)}<br>Interest ${r0(x.interest)} · Fit ${r0(x.fit)}<br>Grade outlook ${r0(x.grade)} · HW-job ${r0(x.job)}<br>Prof & seniors ${r0(x.prof)} · Readiness ${r0(x.ready)}${x.prereqOK ? "" : "<br>⚠ prerequisite missing"}`;
         return `<div class="crow ${c === pick ? "" : "dim"}" data-tip="${esc(tip)}"><span class="cl">${esc(COURSES[c].short)}</span>
           <div class="track"><div class="fill" style="width:${(100 * x.match / mx).toFixed(1)}%"></div></div><span class="cv">${r0(x.match)}</span></div>`;
       }).join("")}</div></div>`;
     };
 
     const heatRow = c => { const x = R[c]; const pick = c === best.x || c === best.y;
-      const cells = [x.interest, x.fit, x.ready, x.grade, x.job, x.match];
+      const cells = [x.interest, x.fit, x.ready, x.grade, x.job, x.prof, x.match];
       return `<tr class="${pick ? "pickrow" : ""}"><td class="rl">${pick ? "★ " : ""}${esc(COURSES[c].short)}</td>${cells.map(v => `<td style="${seqBg(v)}">${r0(v)}</td>`).join("")}</tr>`; };
 
     const hwRoles = Object.keys(ROLES).filter(r => r !== "sw");
@@ -453,10 +502,11 @@
       <h2 class="h2">Fill the Google Form in this order</h2>
       <div class="formcols">${formCol("Professional Elective – II", res.ordII)}${formCol("Professional Elective – III", res.ordIII)}</div>
       <p class="muted">The 1st preference follows the best <i>pair</i>. The rest are ranked by individual match, so you're well covered if seats run out.</p>
+      <div class="warn">${esc(SENIOR_RUN_NOTE)} Your 2nd preference has a real chance of being what you get, so make sure you're happy with it.</div>
 
       <h2 class="h2">Why these</h2>
       <ul class="why">${slotReason(res, "II")}${slotReason(res, "III")}
-        <li><b>Your weighting:</b> interest ${pct(res.W.I / res.Wsum)}, fit ${pct(res.W.F / res.Wsum)}, grade outlook ${pct(res.W.G / res.Wsum)}, hardware-job value ${pct(res.W.J / res.Wsum)} (set by your CGPA and job-value sliders).</li>
+        <li><b>Your weighting:</b> interest ${pct(res.W.I / res.Wsum)}, fit ${pct(res.W.F / res.Wsum)}, grade outlook ${pct(res.W.G / res.Wsum)}, hardware-job value ${pct(res.W.J / res.Wsum)}, professor &amp; seniors ${pct(res.W.P / res.Wsum)} (set by your sliders).</li>
       </ul>
 
       <h2 class="h2">Match scores</h2>
@@ -464,9 +514,9 @@
         <p class="muted" style="margin:12px 0 0">Hover a bar for the breakdown. Match is out of 100.</p></div>
 
       <h2 class="h2">Full breakdown</h2>
-      <div class="card tbl-wrap"><table class="heat"><thead><tr><th class="rl">Course</th><th>Interest</th><th>Fit</th><th>Readiness</th><th>Grade outlook</th><th>HW-job value</th><th>Match</th></tr></thead>
-        <tbody>${SLOT_II.map(heatRow).join("")}<tr><td colspan="7" style="height:6px"></td></tr>${SLOT_III.map(heatRow).join("")}</tbody></table>
-        <p class="muted" style="margin:10px 0 0">Interest = scenarios + blind topic ratings + how you liked prior courses. Fit = maths/coding comfort vs demand, exam style, GATE, honors. Readiness = probe answers + comfort. Grade outlook = difficulty, readiness, style match and class competition. HW-job value = your chosen careers + market demand.</p></div>
+      <div class="card tbl-wrap"><table class="heat"><thead><tr><th class="rl">Course</th><th>Interest</th><th>Fit</th><th>Readiness</th><th>Grade outlook</th><th>HW-job value</th><th>Prof &amp; seniors</th><th>Match</th></tr></thead>
+        <tbody>${SLOT_II.map(heatRow).join("")}<tr><td colspan="8" style="height:6px"></td></tr>${SLOT_III.map(heatRow).join("")}</tbody></table>
+        <p class="muted" style="margin:10px 0 0">Interest = scenarios + blind topic ratings + how you liked prior courses. Fit = maths/coding comfort vs demand, exam style, GATE, honors. Readiness = probe answers + comfort. Grade outlook = difficulty, readiness, style match and class competition. HW-job value = your chosen careers + market demand. Prof &amp; seniors = how you rated the likely instructor/class + class-vibe match.</p></div>
 
       <h2 class="h2">Best pairs</h2>
       <div class="pairs">${pairs.slice(0, 6).map((p, i) => `<div class="pair ${i === 0 ? "top" : ""}"><span class="rk">${i + 1}</span>
@@ -515,6 +565,8 @@
           <div class="cm"><div class="l">Prerequisites</div><div class="v" style="font-size:13px;font-weight:500">${esc(C.prereqText)}</div></div>
           <div class="cm"><div class="l">HW-job index</div><div class="v">${x ? r0(x.market) : "—"}</div></div>
         </div>
+        <div class="profbox"><div class="pr"><span class="pl">Likely instructor</span><span class="pv">${esc(SENIOR[c].prof)}</span></div>
+          <div class="pr"><span class="pl">Seniors say</span><span class="pv">${esc(SENIOR[c].note)}</span></div></div>
         <ul class="units">${C.units.map(u => `<li><b>${esc(u[0])}:</b> ${esc(u[1])}</li>`).join("")}</ul>
         <div class="cnotes">
           <p><span class="lb">Exam style:</span> ${C.examNote}</p>
@@ -539,8 +591,8 @@
       "PE-II preference order: " + res.ordII.map((c, i) => `${i + 1}. ${COURSES[c].short}`).join("  "),
       "PE-III preference order: " + res.ordIII.map((c, i) => `${i + 1}. ${COURSES[c].short}`).join("  "),
       "",
-      "Scores (interest / fit / readiness / grade / hw-job / match):",
-      ...IDS.map(c => `${COURSES[c].short}: ${[R[c].interest, R[c].fit, R[c].ready, R[c].grade, R[c].job, R[c].match].map(r0).join(" / ")}`)
+      "Scores (interest / fit / readiness / grade / hw-job / prof / match):",
+      ...IDS.map(c => `${COURSES[c].short}: ${[R[c].interest, R[c].fit, R[c].ready, R[c].grade, R[c].job, R[c].prof, R[c].match].map(r0).join(" / ")}`)
     ];
     const txt = lines.join("\n");
     const done = () => { btn.textContent = "Copied ✓"; setTimeout(() => btn.textContent = "Copy summary", 1600); };
@@ -584,7 +636,7 @@
 
   $("#aboutPane").innerHTML = `<div class="about">
     <h1 class="h1">How the score works</h1>
-    <p>Every course gets five sub-scores (0–100). They're combined into a <b>match</b> score, then every PE-II × PE-III pair is scored with synergy and workload adjustments. The best pair becomes your 1st preference in each slot.</p>
+    <p>Every course gets six sub-scores (0–100). They're combined into a <b>match</b> score, then every PE-II × PE-III pair is scored with synergy and workload adjustments. The best pair becomes your 1st preference in each slot.</p>
     <h2>1 · Interest</h2>
     <p>35% scenario picks, 40% blind syllabus taste test (real topics from the curriculum, course names hidden, so a course's reputation can't bias you), 25% how much you enjoyed related courses you've already taken.</p>
     <h2>2 · Fit</h2>
@@ -595,8 +647,10 @@
     <p><code>100 − 13×difficulty + 0.45×(readiness−50) + 0.25×(style fit−50) − 6×(competition−3)</code>. Difficulty (1–5) is estimated from each syllabus: maths depth, abstraction, breadth, and overlap with courses you've done. Competition estimates how strong and large the class is likely to be under relative grading. <b>These are estimates, not NITW grade data.</b> Instructor allotment changes grading more than anything else, so ask your seniors who's teaching each course this year.</p>
     <h2>5 · Hardware-job value</h2>
     <p>Each course is mapped (0–1) to 10 hardware roles. The <b>market index</b> weights roles by demand in 2025–26 Indian hiring reports: digital design and verification highest, firmware/system software next, then DFT, physical design, analog/RF, automotive/EV and post-silicon validation. If you pick target careers, 65% of this score comes from those roles and 35% from the market index.</p>
+    <h2>6 · Professors &amp; seniors</h2>
+    <p>For each course you see the likely instructor and what seniors said, and rate it (sounds good 100, fine 65, not for me 15, no opinion 50). That's 70% of this score. The other 30% is class-vibe match: seniors call LPVLSI and V&amp;T the “core” electives and ERTOS and Cellular the “chill” ones, compared with what you want. Senior grading notes also shift the grade outlook: Control Systems +4 (the easiest of the hard three), ERTOS +5, AI&amp;ML +3, Cellular −2, LPVLSI −4, V&amp;T −6. If you dislike long descriptive answers, Cellular takes an extra −8 on grade and −25 here, because seniors warned about exactly that. <b>These notes come from one senior batch and aren't confirmed; instructor allotment can change.</b> ${esc(SENIOR_RUN_NOTE)}</p>
     <h2>Weights</h2>
-    <p>Interest 1.0 · Fit 0.55 · Grade 0.2–1.0 (CGPA slider) · Job 0.1–1.1 (job-value slider), normalised to sum to 1.</p>
+    <p>Interest 1.0 · Fit 0.55 · Grade 0.2–1.0 (CGPA slider) · Job 0.1–1.1 (job-value slider) · Professor &amp; seniors 0.15–1.15 (professor slider), normalised to sum to 1. At the default slider (4) the professor factor is 0.9, nearly equal to interest.</p>
     <h2>Pairs</h2>
     <p>Synergy between the two picks (e.g. ERTOS+IoT, Low Power VLSI+V&amp;T) is rewarded if you want to reinforce, rewarded less if you're indifferent, and penalised if you want to diversify. Pairs whose combined difficulty exceeds your workload appetite are penalised. Strongly overlapping pairs count as a bit lighter.</p>
     <h2>Confidence</h2>

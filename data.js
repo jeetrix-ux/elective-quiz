@@ -516,3 +516,27 @@ const PROBES = [
   { c: "cs", q: "s³ + 2s² + 3s + K = 0 is stable for:",
     options: ["0 < K < 3", "0 < K < 6", "K > 6", "All K > 0"], a: 1 }
 ];
+
+/* ---------- Instructor & senior intel (from seniors, Nov 2026; instructor allotment NOT confirmed) ---------- */
+const SENIOR = {
+  ai:    { prof: "Prof. Farukh", note: "Very relaxed teacher, but his lectures take patience to sit through.", vibe: "chill", gradeAdj: 3 },
+  ertos: { prof: "Not known yet", note: "Seniors put it in the “chill” group.", vibe: "chill", gradeAdj: 5 },
+  web:   { prof: "Not known yet", note: "No senior feedback yet.", vibe: "unknown", gradeAdj: 0 },
+  lpv:   { prof: "Lakshmi ma'am or Narendar sir", note: "Seniors call it one of the two “core” electives (serious, VLSI-heavy). Not easy to score.", vibe: "core", gradeAdj: -4 },
+  iot:   { prof: "Not known yet", note: "Last year's batch didn't have this course, so there's no senior feedback.", vibe: "unknown", gradeAdj: 0 },
+  cell:  { prof: "Kalpana ma'am", note: "Relaxed class, but lectures are talk-heavy and exams expect long descriptive answers. Seniors: skip it if you hate writing lengthy answers. Not easy to score.", vibe: "chill", gradeAdj: -2, longAnswers: true },
+  vt:    { prof: "Not known yet", note: "Seniors call it one of the two “core” electives. Not easy to score.", vibe: "core", gradeAdj: -6 },
+  cs:    { prof: "Not known yet (EE dept)", note: "Not easy to score, but seniors say it's comparatively the easiest of Cellular, V&T and Control Systems.", vibe: "moderate", gradeAdj: 4 }
+};
+const SENIOR_RUN_NOTE = "Seniors say that depending on how many students pick each course, only 2 of the 4 in each slot may actually run.";
+
+/* extra Part-1 questions about class vibe and how much the prof should count */
+PART_A.splice(PART_A.findIndex(q => q.id === "prio") + 1, 0,
+  { id: "vibe", type: "single", q: "What kind of class do you want?",
+    options: [
+      { v: "chill", t: "Chill: relaxed class and pace" },
+      { v: "core", t: "Serious core course: rigorous, worth the effort" },
+      { v: "any", t: "Don't care, the content matters more" } ] },
+  { id: "profw", type: "scale", q: "How much should the professor and seniors' feedback count?",
+    low: "Barely", high: "A lot: a bad prof can ruin a good course", def: 4 }
+);

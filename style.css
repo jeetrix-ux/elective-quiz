@@ -223,3 +223,10 @@ details.course[open] > summary .chev { transform: rotate(90deg); }
 
 .foot { color: var(--text-3); font-size: 12.5px; padding-bottom: 30px; }
 .sec { margin-top: 14px; }
+
+/* professor box */
+.profbox { display: grid; gap: 6px; margin: 10px 0 14px; padding: 12px 14px; background: var(--surface-2); border-radius: 10px; border-left: 3px solid var(--accent); }
+.profbox .pr { display: grid; grid-template-columns: 130px 1fr; gap: 10px; font-size: 14.5px; }
+.profbox .pl { color: var(--text-3); font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; font-weight: 600; padding-top: 2px; }
+.profbox .pv { color: var(--text); }
+@media (max-width: 520px) { .profbox .pr { grid-template-columns: 1fr; gap: 2px; } }
